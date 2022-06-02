@@ -1,17 +1,21 @@
 /*
- * Copyright (c) 2014-2021 Bjoern Kimminich & the OWASP Juice Shop contributors.
+ * Copyright (c) 2014-2022 Bjoern Kimminich & the OWASP Juice Shop contributors.
  * SPDX-License-Identifier: MIT
  */
 
 import fs = require('fs')
+import { Request, Response } from 'express'
+
 const pug = require('pug')
 const config = require('config')
 const challenges = require('../data/datacache').challenges
 const utils = require('../lib/utils')
 const themes = require('../views/themes/themes').themes
+const Entities = require('html-entities').AllHtmlEntities
+const entities = new Entities()
 
 exports.getVideo = () => {
-  return (req, res) => {
+  return (req: Request, res: Response) => {
     const path = videoPath()
     const stat = fs.statSync(path)
     const fileSize = stat.size
@@ -43,7 +47,7 @@ exports.getVideo = () => {
 }
 
 exports.promotionVideo = () => {
-  return (req, res) => {
+  return (req: Request, res: Response) => {
     fs.readFile('views/promotionVideo.pug', function (err, buf) {
       if (err != null) throw err
       let template = buf.toString()
@@ -52,7 +56,7 @@ exports.promotionVideo = () => {
       utils.solveIf(challenges.videoXssChallenge, () => { return utils.contains(subs, '</script><script>alert(`xss`)</script>') })
 
       const theme = themes[config.get('application.theme')]
-      template = template.replace(/_title_/g, config.get('application.name'))
+      template = template.replace(/_title_/g, entities.encode(config.get('application.name')))
       template = template.replace(/_favicon_/g, favicon())
       template = template.replace(/_bgColor_/g, theme.bgColor)
       template = template.replace(/_textColor_/g, theme.textColor)
@@ -82,7 +86,7 @@ function getSubsFromFile () {
 function videoPath () {
   if (config?.application?.promotion?.video !== null) {
     const video = utils.extractFilename(config.application.promotion.video)
-    return 'frontend/src/assets/public/videos/' + video
+    return 'frontend/dist/frontend/assets/public/videos/' + video
   }
-  return 'frontend/src/assets/public/videos/owasp_promo.mp4'
+  return 'frontend/dist/frontend/assets/public/videos/owasp_promo.mp4'
 }

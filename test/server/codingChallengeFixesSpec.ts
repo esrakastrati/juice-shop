@@ -1,11 +1,12 @@
 /*
- * Copyright (c) 2014-2021 Bjoern Kimminich & the OWASP Juice Shop contributors.
+ * Copyright (c) 2014-2022 Bjoern Kimminich & the OWASP Juice Shop contributors.
  * SPDX-License-Identifier: MIT
  */
 
-import { fileSniff, SNIPPET_PATHS } from '../../routes/vulnCodeSnippet'
+import { retrieveChallengesWithCodeSnippet } from '../../routes/vulnCodeSnippet'
 import { readFixes } from '../../routes/vulnCodeFixes'
 import chai = require('chai')
+import fs from 'graceful-fs'
 const sinonChai = require('sinon-chai')
 const expect = chai.expect
 chai.use(sinonChai)
@@ -13,9 +14,7 @@ chai.use(sinonChai)
 describe('codingChallengeFixes', () => {
   let codingChallenges: string[]
   before(async () => {
-    const match = /vuln-code-snippet start .*/
-    const matches = await fileSniff(SNIPPET_PATHS, match)
-    codingChallenges = matches.map(m => m.match.trim().substr(26).trim()).join(' ').split(' ').filter(c => c.endsWith('Challenge'))
+    codingChallenges = await retrieveChallengesWithCodeSnippet()
   })
 
   it('should have a correct fix for each coding challenge', async () => {
@@ -29,6 +28,12 @@ describe('codingChallengeFixes', () => {
     for (const challenge of codingChallenges) {
       const fixes = readFixes(challenge)
       expect(fixes.fixes.length, `Coding challenge ${challenge} does not have enough fix option files`).to.be.greaterThanOrEqual(3)
+    }
+  })
+
+  it('should have an info YAML file for each coding challenge', async () => {
+    for (const challenge of codingChallenges) {
+      expect(fs.existsSync('./data/static/codefixes/' + challenge + '.info.yml'), `Coding challenge ${challenge} does not have an info YAML file`).to.equal(true)
     }
   })
 })

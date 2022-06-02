@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2021 Bjoern Kimminich & the OWASP Juice Shop contributors.
+ * Copyright (c) 2014-2022 Bjoern Kimminich & the OWASP Juice Shop contributors.
  * SPDX-License-Identifier: MIT
  */
 
@@ -67,7 +67,7 @@ export class SearchResultComponent implements OnDestroy, AfterViewInit {
     forkJoin([quantities, products]).subscribe(([quantities, products]) => {
       const dataTable: TableEntry[] = []
       this.tableData = products
-      this.trustProductDescription(products)
+      this.trustProductDescription(products) // vuln-code-snippet neutral-line restfulXssChallenge
       for (const product of products) {
         dataTable.push({
           name: product.name,
@@ -121,11 +121,11 @@ export class SearchResultComponent implements OnDestroy, AfterViewInit {
     }, (err) => console.log(err))
   }
 
-  trustProductDescription (tableData: any[]) {
-    for (let i = 0; i < tableData.length; i++) {
+  trustProductDescription (tableData: any[]) { // vuln-code-snippet neutral-line restfulXssChallenge
+    for (let i = 0; i < tableData.length; i++) { // vuln-code-snippet neutral-line restfulXssChallenge
       tableData[i].description = this.sanitizer.bypassSecurityTrustHtml(tableData[i].description) // vuln-code-snippet vuln-line restfulXssChallenge
-    }
-  }
+    } // vuln-code-snippet neutral-line restfulXssChallenge
+  } // vuln-code-snippet neutral-line restfulXssChallenge
   // vuln-code-snippet end restfulXssChallenge
 
   ngOnDestroy () {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2021 Bjoern Kimminich & the OWASP Juice Shop contributors.
+ * Copyright (c) 2014-2022 Bjoern Kimminich & the OWASP Juice Shop contributors.
  * SPDX-License-Identifier: MIT
  */
 
@@ -69,7 +69,7 @@ const customizePromotionSubtitles = async () => {
   await retrieveCustomFile('application.promotion.subtitles', 'frontend/dist/frontend/assets/public/videos')
 }
 
-const retrieveCustomFile = async (sourceProperty, destinationFolder) => {
+const retrieveCustomFile = async (sourceProperty: string, destinationFolder: string) => {
   let file = config.get(sourceProperty)
   if (utils.isUrl(file)) {
     const filePath = file

@@ -1,5 +1,5 @@
 {
-  "LANGUAGE": "日本の",
+  "LANGUAGE": "日本語",
   "NAV_SEARCH": "検索",
   "SEARCH_PLACEHOLDER": "検索...",
   "NAV_COMPLAIN": "苦情",
@@ -412,5 +412,7 @@
   "LABEL_CORRECT_FIX": "Correct Fix",
   "TITLE_CODING_CHALLENGE": "Coding Challenge",
   "TAB_FIND_IT": "Find It",
-  "TAB_FIX_IT": "Fix It"
+  "TAB_FIX_IT": "Fix It",
+  "TITLE_CODING_SCORE": "Coding Score",
+  "LABEL_FEEDBACK": "Feedback"
 }

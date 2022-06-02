@@ -1,24 +1,25 @@
 /*
- * Copyright (c) 2014-2021 Bjoern Kimminich & the OWASP Juice Shop contributors.
+ * Copyright (c) 2014-2022 Bjoern Kimminich & the OWASP Juice Shop contributors.
  * SPDX-License-Identifier: MIT
  */
 
 import frisby = require('frisby')
-const config = require('config')
+import config = require('config')
 const { initialize, bot } = require('../../routes/chatbot')
 const fs = require('fs')
 const utils = require('../../lib/utils')
 
 const REST_URL = 'http://localhost:3000/rest/'
 const API_URL = 'http://localhost:3000/api/'
-let trainingData
+let trainingData: { data: any[] }
 
-async function login ({ email, password, totpSecret }) {
+async function login ({ email, password }: { email: string, password: string }) {
+  // @ts-expect-error
   const loginRes = await frisby
     .post(REST_URL + '/user/login', {
       email,
       password
-    }).catch((res) => {
+    }).catch((res: any) => {
       if (res.json?.type && res.json.status === 'totp_token_required') {
         return res
       }
@@ -53,7 +54,7 @@ describe('/chatbot', () => {
         password: '0Y8rMnww$*9VFYE§59-!Fg1L6t&6lB'
       })
 
-      return await frisby.setup({
+      await void frisby.setup({
         request: {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -75,7 +76,7 @@ describe('/chatbot', () => {
 
       const testCommand = trainingData.data[0].utterances[0]
 
-      return await frisby.setup({
+      await void frisby.setup({
         request: {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -103,7 +104,7 @@ describe('/chatbot', () => {
       bot.addUser('1337', 'bkimminich')
       const testCommand = trainingData.data[0].utterances[0]
 
-      return await frisby.setup({
+      await void frisby.setup({
         request: {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -129,7 +130,7 @@ describe('/chatbot', () => {
       })
       bot.addUser('12345', 'bkimminich')
       const testCommand = trainingData.data[0].utterances[0]
-      return await frisby.setup({
+      await void frisby.setup({
         request: {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -151,6 +152,7 @@ describe('/chatbot', () => {
         })
         .expect('status', 200)
         .then(({ json }) => {
+          // @ts-expect-error
           expect(trainingData.data[0].answers).toContainEqual(json)
         })
     })
@@ -160,7 +162,7 @@ describe('/chatbot', () => {
         email: 'bjoern.kimminich@gmail.com',
         password: 'bW9jLmxpYW1nQGhjaW5pbW1pay5ucmVvamI='
       })
-      return await frisby.get(API_URL + '/Products/1')
+      await void frisby.get(API_URL + '/Products/1')
         .expect('status', 200)
         .then(({ json }) => {
           return frisby.setup({
@@ -190,7 +192,7 @@ describe('/chatbot', () => {
         email: `stan@${config.get('application.domain')}`,
         password: 'ship coffin krypt cross estate supply insurance asbestos souvenir'
       })
-      return await frisby.setup({
+      await void frisby.setup({
         request: {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -236,7 +238,7 @@ describe('/chatbot', () => {
       })
       const testCommand = functionTest[0].utterances[0]
       const testResponse = '3be2e438b7f3d04c89d7749f727bb3bd'
-      return await frisby.setup({
+      await void frisby.setup({
         request: {
           headers: {
             Authorization: `Bearer ${token}`,

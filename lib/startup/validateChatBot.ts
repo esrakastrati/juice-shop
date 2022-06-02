@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2021 Bjoern Kimminich & the OWASP Juice Shop contributors.
+ * Copyright (c) 2014-2022 Bjoern Kimminich & the OWASP Juice Shop contributors.
  * SPDX-License-Identifier: MIT
  */
 
@@ -8,7 +8,7 @@ const colors = require('colors/safe')
 const logger = require('../logger')
 const utils = require('../utils')
 
-const validateChatBot = (trainingData, exitOnFailure = true) => {
+const validateChatBot = (trainingData: any, exitOnFailure = true) => {
   let success = true
   success = checkIntentWithFunctionHandlerExists(trainingData, 'queries.couponCode', 'couponCode') && success
   success = checkIntentWithFunctionHandlerExists(trainingData, 'queries.productPrice', 'productPrice') && success
@@ -26,14 +26,14 @@ const validateChatBot = (trainingData, exitOnFailure = true) => {
   return success
 }
 
-const checkIntentWithFunctionHandlerExists = (trainingData, intent, handler) => {
+const checkIntentWithFunctionHandlerExists = (trainingData: any, intent: string, handler: string) => {
   let success = true
-  const intentData = trainingData.data.filter(data => data.intent === intent)
+  const intentData = trainingData.data.filter((data: any) => data.intent === intent)
   if (intentData.length === 0) {
     logger.warn(`Intent ${colors.italic(intent)} is missing in chatbot training data (${colors.red('NOT OK')})`)
     success = false
   } else {
-    if (intentData[0].answers.filter(answer => answer.action === 'function' && answer.handler === handler).length === 0) {
+    if (intentData[0].answers.filter((answer: { action: string, handler: string }) => answer.action === 'function' && answer.handler === handler).length === 0) {
       logger.warn(`Answer with ${colors.italic('function')} action and handler ${colors.italic(handler)} is missing for intent ${colors.italic(intent)} (${colors.red('NOT OK')})`)
       success = false
     }

@@ -1,8 +1,8 @@
 module.exports = function productReviews () {
-  return (req, res, next) => {
+  return (req: Request, res: Response, next: NextFunction) => {
     const user = security.authenticatedUsers.from(req)
 
-    if (req.body['$ne'] !== undefined) {
+    if (req.body.id['$ne'] !== undefined) {
       res.status(400).send()
       return
     }
@@ -11,9 +11,9 @@ module.exports = function productReviews () {
       { _id: req.body.id },
       { $set: { message: req.body.message } }
     ).then(
-      result => {
+      (result: { modified: number, original: Array<{ author: any }> }) => {
         res.json(result)
-      }, err => {
+      }, (err: unknown) => {
         res.status(500).json(err)
       })
   }

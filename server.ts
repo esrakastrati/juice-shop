@@ -1,9 +1,25 @@
 /*
- * Copyright (c) 2014-2021 Bjoern Kimminich & the OWASP Juice Shop contributors.
+ * Copyright (c) 2014-2022 Bjoern Kimminich & the OWASP Juice Shop contributors.
  * SPDX-License-Identifier: MIT
  */
 import dataErasure from './routes/dataErasure'
 import fs = require('fs')
+import { Request, Response, NextFunction } from 'express'
+import { sequelize } from './models/index'
+import { UserModel } from './models/user'
+import { QuantityModel } from './models/quantity'
+import { CardModel } from './models/card'
+import { PrivacyRequestModel } from './models/privacyRequests'
+import { AddressModel } from './models/address'
+import { SecurityAnswerModel } from './models/securityAnswer'
+import { SecurityQuestionModel } from './models/securityQuestion'
+import { RecycleModel } from './models/recycle'
+import { ComplaintModel } from './models/complaint'
+import { ChallengeModel } from './models/challenge'
+import { BasketItemModel } from './models/basketitem'
+import { FeedbackModel } from './models/feedback'
+import { ProductModel } from './models/product'
+import { WalletModel } from './models/wallet'
 const startTime = Date.now()
 const path = require('path')
 const morgan = require('morgan')
@@ -70,7 +86,6 @@ const likeProductReviews = require('./routes/likeProductReviews')
 const logger = require('./lib/logger')
 const utils = require('./lib/utils')
 const security = require('./lib/insecurity')
-const models = require('./models')
 const datacreator = require('./data/datacreator')
 const app = express()
 const server = require('http').Server(app)
@@ -107,8 +122,8 @@ const startupGauge = new client.Gauge({
 })
 
 // Wraps the function and measures its (async) execution time
-const collectDurationPromise = (name, func) => {
-  return async (...args) => {
+const collectDurationPromise = (name: string, func: Function) => {
+  return async (...args: any) => {
     const end = startupGauge.startTimer({ task: name })
     const res = await func(...args)
     end()
@@ -155,7 +170,7 @@ restoreOverwrittenFilesWithOriginals().then(() => {
   }))
 
   /* Remove duplicate slashes from URL which allowed bypassing subsequent filters */
-  app.use((req, res, next) => {
+  app.use((req: Request, res: Response, next: NextFunction) => {
     req.url = req.url.replace(/[/]+/g, '/')
     next()
   })
@@ -171,7 +186,7 @@ restoreOverwrittenFilesWithOriginals().then(() => {
     contact: config.get('application.securityTxt.contact'),
     encryption: config.get('application.securityTxt.encryption'),
     acknowledgements: config.get('application.securityTxt.acknowledgements'),
-    'Preferred-Languages': [...new Set(locales.map(locale => locale.key.substr(0, 2)))].join(', '),
+    'Preferred-Languages': [...new Set(locales.map((locale: { key: string }) => locale.key.substr(0, 2)))].join(', '),
     expires: securityTxtExpiration.toUTCString()
   }))
 
@@ -188,13 +203,14 @@ restoreOverwrittenFilesWithOriginals().then(() => {
   app.use('/solve/challenges/server-side', verify.serverSideChallenges())
 
   /* Create middleware to change paths from the serve-index plugin from absolute to relative */
-  const serveIndexMiddleware = (req, res, next) => {
+  const serveIndexMiddleware = (req: Request, res: Response, next: NextFunction) => {
     const origEnd = res.end
+    // @ts-expect-error
     res.end = function () {
       if (arguments.length) {
         const reqPath = req.originalUrl.replace(/\?.*$/, '')
         const currentFolder = reqPath.split('/').pop()
-        arguments[0] = arguments[0].replace(/a href="([^"]+?)"/gi, function (matchString, matchedUrl) {
+        arguments[0] = arguments[0].replace(/a href="([^"]+?)"/gi, function (matchString: string, matchedUrl: string) {
           let relativePath = path.relative(reqPath, matchedUrl)
           if (relativePath === '') {
             relativePath = currentFolder
@@ -206,22 +222,23 @@ restoreOverwrittenFilesWithOriginals().then(() => {
           return 'a href="' + relativePath + '"'
         })
       }
+      // @ts-expect-error
       origEnd.apply(this, arguments)
     }
     next()
   }
 
   // vuln-code-snippet start directoryListingChallenge accessLogDisclosureChallenge
-  /* /ftp directory browsing and file download */
+  /* /ftp directory browsing and file download */ // vuln-code-snippet neutral-line directoryListingChallenge
   app.use('/ftp', serveIndexMiddleware, serveIndex('ftp', { icons: true })) // vuln-code-snippet vuln-line directoryListingChallenge
-  app.use('/ftp(?!/quarantine)/:file', fileServer())
-  app.use('/ftp/quarantine/:file', quarantineServer())
+  app.use('/ftp(?!/quarantine)/:file', fileServer()) // vuln-code-snippet vuln-line directoryListingChallenge
+  app.use('/ftp/quarantine/:file', quarantineServer()) // vuln-code-snippet neutral-line directoryListingChallenge
 
   /* /encryptionkeys directory browsing */
   app.use('/encryptionkeys', serveIndexMiddleware, serveIndex('encryptionkeys', { icons: true, view: 'details' }))
   app.use('/encryptionkeys/:file', keyServer())
 
-  /* /logs directory browsing */
+  /* /logs directory browsing */ // vuln-code-snippet neutral-line accessLogDisclosureChallenge
   app.use('/support/logs', serveIndexMiddleware, serveIndex('logs', { icons: true, view: 'details' })) // vuln-code-snippet vuln-line accessLogDisclosureChallenge
   app.use('/support/logs', verify.accessControlChallenges()) // vuln-code-snippet hide-line
   app.use('/support/logs/:file', logFileServer()) // vuln-code-snippet vuln-line accessLogDisclosureChallenge
@@ -235,7 +252,7 @@ restoreOverwrittenFilesWithOriginals().then(() => {
 
   /* Configure and enable backend-side i18n */
   i18n.configure({
-    locales: locales.map(locale => locale.key),
+    locales: locales.map((locale: { key: string }) => locale.key),
     directory: path.resolve('i18n'),
     cookie: 'language',
     defaultLocale: 'en',
@@ -251,15 +268,20 @@ restoreOverwrittenFilesWithOriginals().then(() => {
   app.post('/rest/memories', uploadToDisk.single('image'), ensureFileIsPassed, security.appendUserId(), metrics.observeFileUploadMetricsMiddleware(), memory.addMemory())
 
   app.use(bodyParser.text({ type: '*/*' }))
-  app.use(function jsonParser (req, res, next) {
+  app.use(function jsonParser (req: Request, res: Response, next: NextFunction) {
+    // @ts-expect-error
     req.rawBody = req.body
-    if (req.headers['content-type'] !== undefined && req.headers['content-type'].indexOf('application/json') > -1) {
-      if (req.body && req.body !== Object(req.body)) { // Expensive workaround for 500 errors during Frisby test run (see #640)
+    if (req.headers['content-type']?.includes('application/json')) {
+      if (!req.body) {
+        req.body = {}
+      }
+      if (req.body !== Object(req.body)) { // Expensive workaround for 500 errors during Frisby test run (see #640)
         req.body = JSON.parse(req.body)
       }
     }
     next()
   })
+
   /* HTTP request logging */
   const accessLogStream = require('file-stream-rotator').getStream({
     filename: path.resolve('logs/access.log'),
@@ -275,7 +297,7 @@ restoreOverwrittenFilesWithOriginals().then(() => {
   app.use('/rest/user/reset-password', new RateLimit({
     windowMs: 5 * 60 * 1000,
     max: 100,
-    keyGenerator ({ headers, ip }) { return headers['X-Forwarded-For'] || ip } // vuln-code-snippet vuln-line resetPasswordMortyChallenge
+    keyGenerator ({ headers, ip }: { headers: any, ip: any }) { return headers['X-Forwarded-For'] || ip } // vuln-code-snippet vuln-line resetPasswordMortyChallenge
   }))
   // vuln-code-snippet end resetPasswordMortyChallenge
 
@@ -296,8 +318,8 @@ restoreOverwrittenFilesWithOriginals().then(() => {
     .get(security.isAuthorized())
     .put(security.denyAll())
     .delete(security.denyAll())
-  /* Products: Only GET is allowed in order to view products */
-  app.post('/api/Products', security.isAuthorized())
+  /* Products: Only GET is allowed in order to view products */ // vuln-code-snippet neutral-line changeProductChallenge
+  app.post('/api/Products', security.isAuthorized()) // vuln-code-snippet neutral-line changeProductChallenge
   // app.put('/api/Products/:id', security.isAuthorized()) // vuln-code-snippet vuln-line changeProductChallenge
   app.delete('/api/Products/:id', security.denyAll())
   /* Challenges: GET list of challenges allowed. Everything else forbidden entirely */
@@ -391,45 +413,45 @@ restoreOverwrittenFilesWithOriginals().then(() => {
 
   // vuln-code-snippet start registerAdminChallenge
   /* Generated API endpoints */
-  finale.initialize({ app, sequelize: models.sequelize })
+  finale.initialize({ app, sequelize })
 
   const autoModels = [
-    { name: 'User', exclude: ['password', 'totpSecret'] },
-    { name: 'Product', exclude: [] },
-    { name: 'Feedback', exclude: [] },
-    { name: 'BasketItem', exclude: [] },
-    { name: 'Challenge', exclude: [] },
-    { name: 'Complaint', exclude: [] },
-    { name: 'Recycle', exclude: [] },
-    { name: 'SecurityQuestion', exclude: [] },
-    { name: 'SecurityAnswer', exclude: [] },
-    { name: 'Address', exclude: [] },
-    { name: 'PrivacyRequest', exclude: [] },
-    { name: 'Card', exclude: [] },
-    { name: 'Quantity', exclude: [] }
+    { name: 'User', exclude: ['password', 'totpSecret'], model: UserModel },
+    { name: 'Product', exclude: [], model: ProductModel },
+    { name: 'Feedback', exclude: [], model: FeedbackModel },
+    { name: 'BasketItem', exclude: [], model: BasketItemModel },
+    { name: 'Challenge', exclude: [], model: ChallengeModel },
+    { name: 'Complaint', exclude: [], model: ComplaintModel },
+    { name: 'Recycle', exclude: [], model: RecycleModel },
+    { name: 'SecurityQuestion', exclude: [], model: SecurityQuestionModel },
+    { name: 'SecurityAnswer', exclude: [], model: SecurityAnswerModel },
+    { name: 'Address', exclude: [], model: AddressModel },
+    { name: 'PrivacyRequest', exclude: [], model: PrivacyRequestModel },
+    { name: 'Card', exclude: [], model: CardModel },
+    { name: 'Quantity', exclude: [], model: QuantityModel }
   ]
 
-  for (const { name, exclude } of autoModels) {
+  for (const { name, exclude, model } of autoModels) {
     const resource = finale.resource({
-      model: models[name],
+      model,
       endpoints: [`/api/${name}s`, `/api/${name}s/:id`],
       excludeAttributes: exclude
     })
 
     // create a wallet when a new user is registered using API
-    if (name === 'User') {
-      resource.create.send.before((req, res, context) => { // vuln-code-snippet vuln-line registerAdminChallenge
-        models.Wallet.create({ UserId: context.instance.id }).catch((err) => {
+    if (name === 'User') { // vuln-code-snippet neutral-line registerAdminChallenge
+      resource.create.send.before((req: Request, res: Response, context: { instance: { id: any }, continue: any }) => { // vuln-code-snippet vuln-line registerAdminChallenge
+        WalletModel.create({ UserId: context.instance.id }).catch((err: unknown) => {
           console.log(err)
         })
-        return context.continue
-      })
-    }
+        return context.continue // vuln-code-snippet neutral-line registerAdminChallenge
+      }) // vuln-code-snippet neutral-line registerAdminChallenge
+    } // vuln-code-snippet neutral-line registerAdminChallenge
     // vuln-code-snippet end registerAdminChallenge
 
     // translate challenge descriptions and hints on-the-fly
     if (name === 'Challenge') {
-      resource.list.fetch.after((req, res, context) => {
+      resource.list.fetch.after((req: Request, res: Response, context: { instance: string | any[], continue: any }) => {
         for (let i = 0; i < context.instance.length; i++) {
           let description = context.instance[i].description
           if (utils.contains(description, '<em>(This challenge is <strong>')) {
@@ -445,7 +467,7 @@ restoreOverwrittenFilesWithOriginals().then(() => {
         }
         return context.continue
       })
-      resource.read.send.before((req, res, context) => {
+      resource.read.send.before((req: Request, res: Response, context: { instance: { description: string, hint: string }, continue: any }) => {
         context.instance.description = req.__(context.instance.description)
         if (context.instance.hint) {
           context.instance.hint = req.__(context.instance.hint)
@@ -456,13 +478,13 @@ restoreOverwrittenFilesWithOriginals().then(() => {
 
     // translate security questions on-the-fly
     if (name === 'SecurityQuestion') {
-      resource.list.fetch.after((req, res, context) => {
+      resource.list.fetch.after((req: Request, res: Response, context: { instance: string | any[], continue: any }) => {
         for (let i = 0; i < context.instance.length; i++) {
           context.instance[i].question = req.__(context.instance[i].question)
         }
         return context.continue
       })
-      resource.read.send.before((req, res, context) => {
+      resource.read.send.before((req: Request, res: Response, context: { instance: { question: string }, continue: any }) => {
         context.instance.question = req.__(context.instance.question)
         return context.continue
       })
@@ -470,14 +492,14 @@ restoreOverwrittenFilesWithOriginals().then(() => {
 
     // translate product names and descriptions on-the-fly
     if (name === 'Product') {
-      resource.list.fetch.after((req, res, context) => {
+      resource.list.fetch.after((req: Request, res: Response, context: { instance: any[], continue: any }) => {
         for (let i = 0; i < context.instance.length; i++) {
           context.instance[i].name = req.__(context.instance[i].name)
           context.instance[i].description = req.__(context.instance[i].description)
         }
         return context.continue
       })
-      resource.read.send.before((req, res, context) => {
+      resource.read.send.before((req: Request, res: Response, context: { instance: { name: string, description: string }, continue: any }) => {
         context.instance.name = req.__(context.instance.name)
         context.instance.description = req.__(context.instance.description)
         return context.continue
@@ -485,7 +507,7 @@ restoreOverwrittenFilesWithOriginals().then(() => {
     }
 
     // fix the api difference between finale (fka epilogue) and previously used sequlize-restful
-    resource.all.send.before((req, res, context) => {
+    resource.all.send.before((req: Request, res: Response, context: { instance: { status: string, data: any }, continue: any }) => {
       context.instance = {
         status: 'success',
         data: context.instance
@@ -562,7 +584,7 @@ restoreOverwrittenFilesWithOriginals().then(() => {
   app.post('/profile', updateUserProfile())
 
   /* Route for vulnerable code snippets */
-  app.get('/snippets', vulnCodeSnippet.challengesWithCodeSnippet())
+  app.get('/snippets', vulnCodeSnippet.serveChallengesWithCodeSnippet())
   app.get('/snippets/:challenge', vulnCodeSnippet.serveCodeSnippet())
   app.post('/snippets/verdict', vulnCodeSnippet.checkVulnLines())
   app.get('/snippets/fixes/:key', vulnCodeFixes.serveCodeFixes())
@@ -579,22 +601,22 @@ restoreOverwrittenFilesWithOriginals().then(() => {
 
 const multer = require('multer')
 const uploadToMemory = multer({ storage: multer.memoryStorage(), limits: { fileSize: 200000 } })
-const mimeTypeMap = {
+const mimeTypeMap: any = {
   'image/png': 'png',
   'image/jpeg': 'jpg',
   'image/jpg': 'jpg'
 }
 const uploadToDisk = multer({
   storage: multer.diskStorage({
-    destination: (req, file, cb) => {
+    destination: (req: Request, file: any, cb: Function) => {
       const isValid = mimeTypeMap[file.mimetype]
-      let error = new Error('Invalid mime type')
+      let error: Error | null = new Error('Invalid mime type')
       if (isValid) {
         error = null
       }
       cb(error, path.resolve('frontend/dist/frontend/assets/public/images/uploads/'))
     },
-    filename: (req, file, cb) => {
+    filename: (req: Request, file: any, cb: Function) => {
       const name = security.sanitizeFilename(file.originalname)
         .toLowerCase()
         .split(' ')
@@ -607,8 +629,8 @@ const uploadToDisk = multer({
 
 // vuln-code-snippet start exposedMetricsChallenge
 /* Serve metrics */
-const Metrics = metrics.observeMetrics()
-const metricsUpdateLoop = Metrics.updateLoop
+const Metrics = metrics.observeMetrics() // vuln-code-snippet neutral-line exposedMetricsChallenge
+const metricsUpdateLoop = Metrics.updateLoop // vuln-code-snippet neutral-line exposedMetricsChallenge
 app.get('/metrics', metrics.serveMetrics()) // vuln-code-snippet vuln-line exposedMetricsChallenge
 errorhandler.title = `${config.get('application.name')} (Express ${utils.version('express')})`
 
@@ -616,9 +638,9 @@ const registerWebsocketEvents = require('./lib/startup/registerWebsocketEvents')
 const customizeApplication = require('./lib/startup/customizeApplication')
 const customizeEasterEgg = require('./lib/startup/customizeEasterEgg') // vuln-code-snippet hide-line
 
-export async function start (readyCallback) {
+export async function start (readyCallback: Function) {
   const datacreatorEnd = startupGauge.startTimer({ task: 'datacreator' })
-  await models.sequelize.sync({ force: true })
+  await sequelize.sync({ force: true })
   await datacreator()
   datacreatorEnd()
   const port = process.env.PORT ?? config.get('server.port')
@@ -640,7 +662,7 @@ export async function start (readyCallback) {
   void collectDurationPromise('customizeEasterEgg', customizeEasterEgg)() // vuln-code-snippet hide-line
 }
 
-export function close (exitCode) {
+export function close (exitCode: number | undefined) {
   if (server) {
     clearInterval(metricsUpdateLoop)
     server.close()

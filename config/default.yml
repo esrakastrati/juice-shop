@@ -57,32 +57,32 @@ application:
     clientId: '1005568560502-6hm16lef8oh46hr2d98vf2ohlnj4nfhq.apps.googleusercontent.com'
     authorizedRedirects:
       - { uri: 'https://demo.owasp-juice.shop' }
-      - { uri: 'http://demo.owasp-juice.shop' }
       - { uri: 'https://juice-shop.herokuapp.com' }
-      - { uri: 'http://juice-shop.herokuapp.com' }
       - { uri: 'https://preview.owasp-juice.shop' }
-      - { uri: 'http://preview.owasp-juice.shop' }
       - { uri: 'https://juice-shop-staging.herokuapp.com' }
-      - { uri: 'http://juice-shop-staging.herokuapp.com' }
-      - { uri: 'http://juice-shop.wtf' }
-      - { uri: 'http://localhost:3000', proxy: 'http://local3000.owasp-juice.shop' }
-      - { uri: 'http://127.0.0.1:3000', proxy: 'http://local3000.owasp-juice.shop' }
-      - { uri: 'http://localhost:4200', proxy: 'http://local4200.owasp-juice.shop' }
-      - { uri: 'http://127.0.0.1:4200', proxy: 'http://local4200.owasp-juice.shop' }
-      - { uri: 'http://192.168.99.100:3000', proxy: 'http://localmac.owasp-juice.shop' }
-      - { uri: 'http://penguin.termina.linux.test:3000', proxy: 'http://localchromeos.owasp-juice.shop' }
+      - { uri: 'https://juice-shop.wtf' }
+      - { uri: 'http://localhost:3000', proxy: 'https://local3000.owasp-juice.shop' }
+      - { uri: 'http://127.0.0.1:3000', proxy: 'https://local3000.owasp-juice.shop' }
+      - { uri: 'http://localhost:4200', proxy: 'https://local4200.owasp-juice.shop' }
+      - { uri: 'http://127.0.0.1:4200', proxy: 'https://local4200.owasp-juice.shop' }
+      - { uri: 'http://192.168.99.100:3000', proxy: 'https://localmac.owasp-juice.shop' }
+      - { uri: 'http://192.168.99.100:4200', proxy: 'https://localmac.owasp-juice.shop' }
+      - { uri: 'http://penguin.termina.linux.test:3000', proxy: 'https://localchromeos.owasp-juice.shop' }
+      - { uri: 'http://penguin.termina.linux.test:4200', proxy: 'https://localchromeos.owasp-juice.shop' }
 challenges:
   showSolvedNotifications: true
   showHints: true
   showMitigations: true
-  showCodeSnippets: solved # Options: never  solved  always # TODO Rename into "codingChallengesEnabled" with same options before v13.0.0 release
+  codingChallengesEnabled: solved # Options: never  solved  always
   restrictToTutorialsFirst: false
   overwriteUrlForProductTamperingChallenge: 'https://owasp.slack.com'
   xssBonusPayload: '<iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/771984076&color=%23ff5500&auto_play=true&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true"></iframe>'
   safetyOverride: false
+  showFeedbackButtons: true
 hackingInstructor:
   isEnabled: true
   avatarImage: JuicyBot_MedicalMask.png
+  hintPlaybackSpeed: normal # Options: faster fast normal slow slower
 products:
   -
     name: 'Apple Juice (1000ml)'
@@ -361,7 +361,7 @@ products:
     price: 9999.99
     quantity: 1
     limitPerUser: 1
-    image: permafrost.jpg                                                                                 
+    image: permafrost.jpg
     reviews:
       - { text: "🧊 Let it go, let it go 🎶 Can't hold it back anymore 🎶 Let it go, let it go 🎶 Turn away and slam the door ❄️", author: rapper }
   -
@@ -386,6 +386,7 @@ products:
     name: '20th Anniversary Celebration Ticket'
     description: 'Get your <a href="https://20thanniversary.owasp.org/" target="_blank">free 🎫 for OWASP 20th Anniversary Celebration</a> online conference! Hear from world renowned keynotes and special speakers, network with your peers and interact with our event sponsors. With an anticipated 10k+ attendees from around the world, you will not want to miss this live on-line event!'
     price: 0.00000000000000000001
+    deletedDate: '2021-09-25'
     limitPerUser: 1
     image: 20th.jpeg
     reviews:
@@ -400,7 +401,7 @@ memories:
     caption: 'My rare collectors item! [̲̅$̲̅(̲̅ ͡° ͜ʖ ͡°̲̅)̲̅$̲̅]'
     user: bjoernGoogle
   -
-    image: 'favorite-hiking-place.png' 
+    image: 'favorite-hiking-place.png'
     caption: 'I love going hiking here...'
     geoStalkingMetaSecurityQuestion: 14
     geoStalkingMetaSecurityAnswer: 'Daniel Boone National Forest'

@@ -26,6 +26,7 @@
     "test/**/*.ts",
     "views/**/*.ts",
     "views/**/*.js",
+    "rsn/**/*.ts",
     "*.ts",
     "*.js"
   ],
@@ -35,10 +36,8 @@
     "dist",
     "build",
     "vagrant",
+    "data/static/codefixes/**",
     "**/*.d.ts",
     ".eslintrc.js"
-  ],
-  "ts-node": {
-    "transpileOnly": true  // allow ts-node to run code with compile errors ignored. Remove this line after ts migration.
-  }
+  ]
 }

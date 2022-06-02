@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2021 Bjoern Kimminich & the OWASP Juice Shop contributors.
+ * Copyright (c) 2014-2022 Bjoern Kimminich & the OWASP Juice Shop contributors.
  * SPDX-License-Identifier: MIT
  */
 
@@ -85,7 +85,8 @@ export class ContactComponent implements OnInit {
       this.ngOnInit()
       this.resetForm()
     }, (err) => {
-      this.snackBarHelperService.open(err.error?.error, 'errorBar')
+      console.log(err)
+      this.snackBarHelperService.open(err.error, 'errorBar')
       this.feedback = {}
       this.resetCaptcha()
     })
